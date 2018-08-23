@@ -15,8 +15,8 @@ class Main {
     private val neuralNetwork = RecurrentNeuralNetwork(ActivationFunction())
     // neural network parameters
     private val embedSize = 10
-    private val iterations = 17000
-    private val alpha = 0.002
+    private val iterations = 30000
+    private val alpha = 0.001
 
     // test data set
     private val testDataTokenizer = FileTokenizer(File(dataDirectory, "test.data"))
@@ -48,14 +48,14 @@ class Main {
                 val target: Int = sentence[sentenceIndex]
                 if (downIndex > 0) {
                     layer["output_delta"] = layer["prediction"]!!.toList().mapIndexed { i, it -> it - identityMatrix[target, i] }.toMatrix(weights.rows, 1)
-                    val newHiddenDelta = decoder.asTransposed() x layer["output_delta"]!!
+                    val newHiddenDelta = layer["output_delta"]!! dot decoder.asTransposed()
                     if (downIndex == layers.size - 1) {
                         layer["hidden_delta"] = newHiddenDelta
                     } else {
-                        layer["hidden_delta"] = newHiddenDelta + (recurrentMatrix.asTransposed() x layers[downIndex + 1]["hidden_delta"]!!)
+                        layer["hidden_delta"] = newHiddenDelta + (layers[downIndex + 1]["hidden_delta"]!! dot recurrentMatrix.asTransposed())
                     }
                 } else {
-                    layer["hidden_delta"] = recurrentMatrix.asTransposed() x layers[downIndex + 1]["hidden_delta"]!!
+                    layer["hidden_delta"] = layers[downIndex + 1]["hidden_delta"]!! dot recurrentMatrix.asTransposed()
                 }
             }
 

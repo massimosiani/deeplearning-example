@@ -18,9 +18,9 @@ class RecurrentNeuralNetwork(
         val layers = mutableListOf(mutableMapOf("hidden" to startSentenceEmbedding))
         var loss = 0.0
         sentence.forEach { word ->
-            val prediction = activationFunction.softmax((decoder x layers.last()["hidden"]!!).toList())
+            val prediction = activationFunction.softmax((layers.last()["hidden"]!! dot decoder).toList())
             loss -= ln(prediction[word])
-            val hidden = (recurrentMatrix x layers.last()["hidden"]!! + List(weights.cols) { i -> weights[word, i] }.toMatrix(weights.cols, 1))
+            val hidden = (layers.last()["hidden"]!! dot recurrentMatrix) + List(weights.cols) { i -> weights[word, i] }.toMatrix(weights.cols, 1)
             layers.add(
                     mutableMapOf(
                             "prediction" to prediction.toMatrix(weights.rows, 1),
