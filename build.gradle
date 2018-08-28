@@ -12,7 +12,7 @@ repositories {
 
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
-    compile "com.github.massimosiani:kotlin-matrix:master-SNAPSHOT"
+    compile "com.github.massimosiani:matrix4k:0.1"
     testCompile "junit:junit:4.12"
     testCompile "org.jetbrains.kotlin:kotlin-test"
     testCompile "org.jetbrains.kotlin:kotlin-test-junit"
