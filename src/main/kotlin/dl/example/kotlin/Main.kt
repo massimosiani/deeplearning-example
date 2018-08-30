@@ -1,6 +1,6 @@
 package dl.example.kotlin
 
-import com.ichipsea.kotlin.matrix.*
+import io.github.matrix4k.*
 import java.io.File
 import kotlin.math.exp
 import kotlin.math.roundToInt

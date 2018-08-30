@@ -1,6 +1,6 @@
 package dl.example.kotlin
 
-import com.ichipsea.kotlin.matrix.*
+import io.github.matrix4k.*
 import kotlin.math.ln
 
 data class PredictionResult(val layers: List<MutableMap<String, Matrix<Double>>>, val loss: Double)
