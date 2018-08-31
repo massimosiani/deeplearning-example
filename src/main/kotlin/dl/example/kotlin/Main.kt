@@ -69,7 +69,7 @@ class Main {
             }
 
             if (Math.random() * 100 > 99.7 || iteration == iterations - 1) {
-                println("Sentence: $wordInSentence --- Perplexity: ${exp(loss / sentence.size)}")
+                println("Sentence: ${wordInSentence.joinToString(separator = " ")} --- Perplexity: ${exp(loss / sentence.size)}")
             }
         }
 
@@ -85,7 +85,7 @@ class Main {
                 recurrentMatrix = recurrentMatrix
         )
 
-        println("Sentence index: $sentenceIndex    Sentence: $sentenceToPredict")
+        println("Sentence index: $sentenceIndex    Sentence: ${sentenceToPredict.joinToString(separator = " ")}")
 
         l.drop(2).forEachIndexed { i, layer ->
             val input = sentenceToPredict[i]
