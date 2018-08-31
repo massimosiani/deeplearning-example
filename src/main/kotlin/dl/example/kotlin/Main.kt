@@ -20,6 +20,7 @@ class Main {
 
     // test data set
     private val testDataTokenizer = FileTokenizer(File(dataDirectory, "test.data"))
+    private val testTokens = testDataTokenizer.tokenize()
 
     fun train() {
         val vocabulary: List<String> = vocabularyBuilder.buildVocabulary(tokens)
@@ -32,7 +33,6 @@ class Main {
 
         for (iteration in 0 until iterations) {
             val wordInSentence = tokens[iteration % tokens.size]
-            val wordsInSentenceToPredict: List<String> = wordInSentence.drop(1)
             val sentence = vocabularyBuilder.collectSentenceIndices(wordInSentence, indices)
             val normalizedAlpha = alpha / sentence.size
             val (layers, loss) = neuralNetwork.predict(
@@ -74,10 +74,10 @@ class Main {
         }
 
         // test
-        val sentenceIndex = (Math.random() * tokens.size - 1).roundToInt()
-        val sentenceToPredict = tokens[sentenceIndex]
+        val sentenceIndex = (Math.random() * testTokens.size - 1).roundToInt()
+        val sentenceToPredict = testTokens[sentenceIndex]
 
-        val (l) = neuralNetwork.predict(
+        val (l, _) = neuralNetwork.predict(
                 sentence = vocabularyBuilder.collectSentenceIndices(sentenceToPredict, indices),
                 weights = weights,
                 startSentenceEmbedding = startSentenceEmbedding,
