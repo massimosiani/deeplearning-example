@@ -55,6 +55,11 @@ class Main {
         val sentenceIndex = (Math.random() * testTokens.size - 1).roundToInt()
         val sentenceToPredict = testTokens[sentenceIndex]
 
+
+        println()
+        println("Prediction:")
+        println("Sentence index: $sentenceIndex    Sentence: ${sentenceToPredict.joinToString(separator = " ")}")
+
         val (l, _) = neuralNetwork.predict(
                 sentence = vocabularyBuilder.collectSentenceIndices(sentenceToPredict, indices),
                 weights = neuralNetworkParameters.weights,
@@ -62,11 +67,6 @@ class Main {
                 decoder = neuralNetworkParameters.decoder,
                 recurrentMatrix = neuralNetworkParameters.recurrentMatrix
         )
-
-
-        println()
-        println("Prediction:")
-        println("Sentence index: $sentenceIndex    Sentence: ${sentenceToPredict.joinToString(separator = " ")}")
 
         l.drop(2).forEachIndexed { i, layer ->
             val input = sentenceToPredict[i]
