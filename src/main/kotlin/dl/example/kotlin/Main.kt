@@ -18,7 +18,6 @@ class Main {
     // neural network parameters
     private val embedSize = 10
     private val iterations = 30000
-    private val alpha = 0.001
 
     // test data set
     private val testDataTokenizer = FileTokenizer(File(dataDirectory, "test.data"))
@@ -27,51 +26,29 @@ class Main {
     fun initInputDataSet(): NeuralNetworkParameters = NeuralNetworkParameters(weights = createMutableMatrix(embedSize, vocabulary.size) { _, _ -> (Math.random() - 0.5) * 0.03 })
 
     fun train(neuralNetworkParameters: NeuralNetworkParameters): NeuralNetworkParameters {
-        val identityMatrix = createMatrix(neuralNetworkParameters.weights.rows, neuralNetworkParameters.weights.rows) { c, r -> if (c == r) 1.0 else 0.0 }
-
+        var nnp = neuralNetworkParameters
         for (iteration in 0 until iterations) {
             val wordInSentence = tokens[iteration % tokens.size]
             val sentence = vocabularyBuilder.collectSentenceIndices(wordInSentence, indices)
-            val normalizedAlpha = alpha / sentence.size
-            val (layers, loss) = neuralNetwork.predict(
+
+            var (layers, loss) = neuralNetwork.predict(
                     sentence,
-                    neuralNetworkParameters.weights,
-                    startSentenceEmbedding = neuralNetworkParameters.startSentenceEmbedding,
-                    recurrentMatrix = neuralNetworkParameters.recurrentMatrix,
-                    decoder = neuralNetworkParameters.decoder
+                    nnp.weights,
+                    startSentenceEmbedding = nnp.startSentenceEmbedding,
+                    recurrentMatrix = nnp.recurrentMatrix,
+                    decoder = nnp.decoder
             )
-            (0 until layers.size).reversed().forEach { downIndex ->
-                val layer = layers[downIndex]
-                val sentenceIndex = if (downIndex > 0) downIndex - 1 else sentence.size - 1
-                val target: Int = sentence[sentenceIndex]
-                if (downIndex > 0) {
-                    layer["outputDelta"] = layer["prediction"]!!.toList().mapIndexed { i, it -> it - identityMatrix[target, i] }.toMatrix(neuralNetworkParameters.weights.rows, 1)
-                    val newHiddenDelta = layer["outputDelta"]!! dot neuralNetworkParameters.decoder.asTransposed()
-                    if (downIndex == layers.size - 1) {
-                        layer["hiddenDelta"] = newHiddenDelta
-                    } else {
-                        layer["hiddenDelta"] = newHiddenDelta + (layers[downIndex + 1]["hiddenDelta"]!! dot neuralNetworkParameters.recurrentMatrix.asTransposed())
-                    }
-                } else {
-                    layer["hiddenDelta"] = layers[downIndex + 1]["hiddenDelta"]!! dot neuralNetworkParameters.recurrentMatrix.asTransposed()
-                }
-            }
 
-            neuralNetworkParameters.startSentenceEmbedding -= layers[0]["hiddenDelta"]!! * normalizedAlpha
+            layers = neuralNetwork.computeCorrections(layers, sentence, nnp)
 
-            layers.drop(1).forEachIndexed { index, layer ->
-                neuralNetworkParameters.decoder -= (layer["hidden"]!! outer layer["outputDelta"]!!) * normalizedAlpha
-                val embedIndex = sentence[index]
-                (0 until neuralNetworkParameters.weights.cols).forEach { col -> neuralNetworkParameters.weights[embedIndex, col] -= layer["hiddenDelta"]!![col, 0] * normalizedAlpha }
-                neuralNetworkParameters.recurrentMatrix -= (layer["hidden"]!! outer layer["hiddenDelta"]!!) * normalizedAlpha
-            }
+            nnp = neuralNetwork.adjustNeuralNetworkParameters(layers, sentence, nnp)
 
             if (Math.random() * 100 > 99.7 || iteration == iterations - 1) {
                 println("Sentence: ${wordInSentence.joinToString(separator = " ")} --- Perplexity: ${exp(loss / sentence.size)}")
             }
         }
 
-        return neuralNetworkParameters
+        return nnp
     }
 
     fun test(neuralNetworkParameters: NeuralNetworkParameters) {

@@ -29,6 +29,49 @@ class RecurrentNeuralNetwork(
 
         return PredictionResult(layers, loss)
     }
+
+    fun computeCorrections(
+            layers: List<MutableMap<String, Matrix<Double>>>,
+            sentence: List<Int>,
+            neuralNetworkParameters: NeuralNetworkParameters): List<MutableMap<String, Matrix<Double>>> {
+        val identityMatrix = createMatrix(neuralNetworkParameters.weights.rows, neuralNetworkParameters.weights.rows) { c, r -> if (c == r) 1.0 else 0.0 }
+
+        (0 until layers.size).reversed().forEach { downIndex ->
+            val layer = layers[downIndex]
+            val sentenceIndex = if (downIndex > 0) downIndex - 1 else sentence.size - 1
+            val target: Int = sentence[sentenceIndex]
+            if (downIndex > 0) {
+                layer["outputDelta"] = layer["prediction"]!!.toList().mapIndexed { i, it -> it - identityMatrix[target, i] }.toMatrix(neuralNetworkParameters.weights.rows, 1)
+                val newHiddenDelta = layer["outputDelta"]!! dot neuralNetworkParameters.decoder.asTransposed()
+                if (downIndex == layers.size - 1) {
+                    layer["hiddenDelta"] = newHiddenDelta
+                } else {
+                    layer["hiddenDelta"] = newHiddenDelta + (layers[downIndex + 1]["hiddenDelta"]!! dot neuralNetworkParameters.recurrentMatrix.asTransposed())
+                }
+            } else {
+                layer["hiddenDelta"] = layers[downIndex + 1]["hiddenDelta"]!! dot neuralNetworkParameters.recurrentMatrix.asTransposed()
+            }
+        }
+
+        return layers
+    }
+
+    fun adjustNeuralNetworkParameters(
+            layers: List<MutableMap<String, Matrix<Double>>>,
+            sentence: List<Int>,
+            neuralNetworkParameters: NeuralNetworkParameters): NeuralNetworkParameters {
+        val normalizedAlpha = neuralNetworkParameters.alpha / sentence.size
+
+        neuralNetworkParameters.startSentenceEmbedding -= layers[0]["hiddenDelta"]!! * normalizedAlpha
+        layers.drop(1).forEachIndexed { index, layer ->
+            neuralNetworkParameters.decoder -= (layer["hidden"]!! outer layer["outputDelta"]!!) * normalizedAlpha
+            val embedIndex = sentence[index]
+            (0 until neuralNetworkParameters.weights.cols).forEach { col -> neuralNetworkParameters.weights[embedIndex, col] -= layer["hiddenDelta"]!![col, 0] * normalizedAlpha }
+            neuralNetworkParameters.recurrentMatrix -= (layer["hidden"]!! outer layer["hiddenDelta"]!!) * normalizedAlpha
+        }
+
+        return neuralNetworkParameters
+    }
 }
 
 fun main (vararg args: String) {
